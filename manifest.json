@@ -8,12 +8,20 @@
     "category": "Live TV",
     "versions": [
       {
+        "version": "0.0.2.0",
+        "changelog": "**0.0.2 beta**\n\n## 🎨 Improvements\n\n- **Dashboard shortcut:** Open HDHomeRun Signal Monitor directly from the Plugins section of the dashboard sidebar.\n- **Antenna icon:** Identify the monitor with an antenna icon in the sidebar.",
+        "targetAbi": "12.2.0.0",
+        "sourceUrl": "https://github.com/aober420/jellyfin-hdhomerun-signal-monitor/releases/download/v0.0.2-beta/HDHomeRunSignalMonitor_0.0.2.0.zip",
+        "checksum": "8b56e588db0e289344cc519e9b2d8b98",
+        "timestamp": "2026-10-18T18:36:10.5427581+00:00"
+      },
+      {
         "version": "0.0.1.0",
         "changelog": "**0.0.1 beta**\n\n## ✨ New Features\n\n- **Live tuner readings:** Automatically refresh channel, signal strength, signal quality, and symbol quality for each HDHomeRun tuner.\n- **Reception graphs:** Follow recent signal changes while adjusting your antenna.\n- **Connection status:** See idle tuners, reception warnings, stream bitrate, and connection errors.\n\n## 🎨 Improvements\n\n- **Jellyfin 12.2:** Initial beta built for Jellyfin 12.2.\n- **Separate plugin:** Install alongside HDHomeRun Free Guide. No guide settings or channel changes are needed.",
         "targetAbi": "12.2.0.0",
         "sourceUrl": "https://github.com/aober420/jellyfin-hdhomerun-signal-monitor/releases/download/v0.0.1-beta/HDHomeRunSignalMonitor_0.0.1.0.zip",
         "checksum": "3b5389d0497f4755df036379ccca1909",
-        "timestamp": "2026-10-18T18:23:25.5750345+00:00"
+        "timestamp": "2026-10-18T13:23:25.5750345-05:00"
       }
     ]
   }
