@@ -1,0 +1,50 @@
+<div id="freeGuidePage" data-role="page" class="page type-interior pluginConfigurationPage">
+<style>
+#freeGuidePage .signal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0}#freeGuidePage .signal-card{padding:18px;border-radius:10px;background:rgba(128,128,128,.12)}#freeGuidePage .signal-card h3{margin:0 0 8px}#freeGuidePage .signal-muted{opacity:.75}#freeGuidePage .signal-warning{color:#ffc66d}#freeGuidePage .signal-row{display:flex;justify-content:space-between;margin-top:12px}#freeGuidePage progress{display:block;width:100%;height:9px;accent-color:#00a4dc}#freeGuidePage canvas{width:100%;height:100px;margin-top:16px}#freeGuidePage .signal-legend{font-size:.85em;display:flex;gap:12px;flex-wrap:wrap}
+</style>
+<div data-role="content"><div class="content-primary">
+<h2>HDHomeRun Signal Monitor</h2>
+<section aria-labelledby="signalHeading"><h2 id="signalHeading">Live tuner signal</h2><p>Readings refresh every second while this page is open. Play a channel in Jellyfin to see its reception. Aim for a steady 100% symbol quality when adjusting your antenna.</p><p id="signalStatus" role="status">Connecting to tuners…</p><div id="signalDevices"></div></section>
+<form id="freeGuideForm"><h2>Tuner settings</h2><p>Uses your configured HDHomeRun tuners. Optionally enter additional tuner addresses below.</p><div class="inputContainer"><label class="inputLabel" for="tunerUrls">Additional tuner URLs (comma separated)</label><input is="emby-input" id="tunerUrls" type="text" /></div><button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button></form>
+</div></div>
+<script type="text/javascript">
+(function(){
+'use strict';
+var page=document.querySelector('#freeGuidePage'), pluginId='a75283c1-427c-4d56-9f52-e4f9725b709a';
+var timer=null, generation=0, history=new Map();
+function element(tag,text,className){var node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(className)node.className=className;return node;}
+function field(value){return value===null||value===undefined?'Unavailable':value+'%';}
+function graph(samples){
+ var canvas=element('canvas');canvas.width=600;canvas.height=140;canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Recent reception readings: strength, signal quality, and symbol quality, from 0 to 100 percent.');
+ var ctx=canvas.getContext('2d');if(!ctx)return canvas;
+ ctx.strokeStyle='rgba(160,160,160,.3)';[0,50,100].forEach(function(v){var y=130-v*1.2;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(600,y);ctx.stroke();});
+ ['Strength','Quality','Symbol'].forEach(function(key,index){ctx.strokeStyle=['#54c8ff','#d59cff','#75dc9a'][index];ctx.lineWidth=3;ctx.beginPath();var open=false;samples.forEach(function(s,i){var value=s[key];if(value===null||value===undefined){open=false;return;}var x=i*600/59,y=130-Math.max(0,Math.min(100,value))*1.2;if(open)ctx.lineTo(x,y);else ctx.moveTo(x,y);open=true;});ctx.stroke();});return canvas;
+}
+function render(data){
+ var root=page.querySelector('#signalDevices');root.replaceChildren();var seen=new Set();
+ if(!data.Devices.length){root.appendChild(element('p','No HDHomeRun tuners configured. Add one under Dashboard → Live TV, or enter its address below.'));history.clear();return;}
+ data.Devices.forEach(function(device){
+  root.appendChild(element('h3',device.Address));
+  if(device.Error){root.appendChild(element('p',device.Error,'signal-warning'));return;}
+  var grid=element('div',undefined,'signal-grid');root.appendChild(grid);
+  if(!device.Tuners.length)grid.appendChild(element('p','No tuner status readings returned.'));
+  device.Tuners.forEach(function(t){
+   var key=device.Address+'/'+t.Resource,card=element('article',undefined,'signal-card'),active=!!t.Channel;grid.appendChild(card);card.appendChild(element('h3',t.Resource));
+   card.appendChild(element('p',active?t.Channel+' '+(t.Name||''):'Idle — play a channel to see reception.','signal-muted'));
+   if(!active){history.delete(key);return;}seen.add(key);
+   var samples=history.get(key)||[];if(samples.length&&samples[samples.length-1].Channel!==t.Channel)samples=[];samples.push(t);if(samples.length>60)samples.shift();history.set(key,samples);
+   [['Signal strength','Strength'],['Signal quality','Quality'],['Symbol quality','Symbol']].forEach(function(pair){var row=element('div',undefined,'signal-row');row.appendChild(element('span',pair[0]));row.appendChild(element('strong',field(t[pair[1]])));card.appendChild(row);var bar=element('progress');bar.max=100;bar.value=Math.max(0,Math.min(100,t[pair[1]]||0));bar.setAttribute('aria-label',pair[0]+': '+field(t[pair[1]]));card.appendChild(bar);});
+   if(t.Symbol!==null&&t.Symbol<100)card.appendChild(element('p','Reception errors detected. Adjust antenna position and check cable connections.','signal-warning'));
+   if(t.NetworkRate!==null)card.appendChild(element('p','Stream: '+(t.NetworkRate/1000000).toFixed(2)+' Mbps','signal-muted'));
+   card.appendChild(graph(samples));var legend=element('div',undefined,'signal-legend');[['Strength','#54c8ff'],['Quality','#d59cff'],['Symbol','#75dc9a']].forEach(function(p){var label=element('span',p[0]);label.style.color=p[1];legend.appendChild(label);});card.appendChild(legend);
+  });
+ });history.forEach(function(_,key){if(!seen.has(key))history.delete(key);});
+}
+function stop(){generation++;clearTimeout(timer);timer=null;}
+function start(){stop();var current=generation;async function poll(){if(current!==generation)return;if(!document.hidden){try{var data=await ApiClient.ajax({type:'GET',url:ApiClient.getUrl('SignalMonitor/Signal'),dataType:'json'});if(current!==generation)return;render(data);page.querySelector('#signalStatus').textContent='Live · Updated '+new Date(data.UpdatedAt).toLocaleTimeString();}catch(error){if(current!==generation)return;page.querySelector('#signalStatus').textContent='Connection lost. Readings below may be stale. Retrying…';}}if(current===generation)timer=setTimeout(poll,1000);}poll();}
+page.addEventListener('pageshow',function(){ApiClient.getPluginConfiguration(pluginId).then(function(c){page.querySelector('#tunerUrls').value=c.TunerUrls||'';});start();});
+page.addEventListener('pagehide',function(){stop();history.clear();});
+page.querySelector('#freeGuideForm').addEventListener('submit',function(e){e.preventDefault();Dashboard.showLoadingMsg();ApiClient.getPluginConfiguration(pluginId).then(function(c){c.TunerUrls=page.querySelector('#tunerUrls').value;return ApiClient.updatePluginConfiguration(pluginId,c);}).then(function(result){Dashboard.processPluginConfigurationUpdateResult(result);history.clear();start();}).catch(function(){Dashboard.hideLoadingMsg();Dashboard.alert('Could not save settings.');});});
+})();
+</script></div>
+
