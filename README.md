@@ -18,5 +18,9 @@ The monitor uses HDHomeRun tuners already configured under Live TV. Additional a
 
 **1.0.0** · Requires Jellyfin 12.2. Monitoring pauses when the browser tab is hidden and stops when you leave the page.
 
+## License
+
+Copyright (c) 2026 aober420 (Aober). Plugin source is licensed under **GPL-3.0-only**. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Third-party components retain their respective licenses.
+
 
 
