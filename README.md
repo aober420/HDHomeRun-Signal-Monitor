@@ -12,15 +12,12 @@ Add this repository URL under **Dashboard → Plugins → Repositories**:
 https://raw.githubusercontent.com/aober420/HDHomeRun-Signal-Monitor/main/manifest.json
 ```
 
-Install **HDHomeRun Signal Monitor** and restart Jellyfin. Open **HDHomeRun Signal Monitor** from the dashboard sidebar under **Plugins** (antenna icon), or from its plugin settings. Play a channel to see its reception; idle tuners have no signal readings.
+Install **HDHomeRun Signal Monitor** and restart Jellyfin. Open **HDHomeRun Signal Monitor** from the dashboard sidebar under **Plugins** (antenna icon), or from its plugin settings. Play a channel or start a channel scan on your HDHomeRun to see its reception. During a scan, the monitor also shows progress, channels found, and the current frequency when supplied by your tuner. Idle tuners have no signal readings.
 
 The monitor uses HDHomeRun tuners already configured under Live TV. Additional addresses can be entered on its settings page. It reads status only and does not change channels. No account or subscription is required.
 
-**1.0.0** · Requires Jellyfin 12.2. Monitoring pauses when the browser tab is hidden and stops when you leave the page.
+**1.0.1** · Requires Jellyfin 12.2. Monitoring pauses when the browser tab is hidden and stops when you leave the page.
 
 ## License
 
 Copyright (c) 2026 aober420 (Aober). Plugin source is licensed under **GPL-3.0-only**. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Third-party components retain their respective licenses.
-
-
-

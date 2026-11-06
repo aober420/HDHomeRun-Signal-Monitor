@@ -8,6 +8,14 @@
     "category": "Live TV",
     "versions": [
       {
+        "version": "1.0.1.0",
+        "changelog": "## ✨ New Features\n\n- **Channel-scan status:** See scan progress and the number of channels found while an HDHomeRun channel scan is running.\n- **Tuned frequency:** Show the tuner's current frequency when it has not reported a channel number.\n\n## 🐛 Bug Fixes\n\n- **Hidden scan readings:** Resolved an issue where signal readings during channel scans were incorrectly hidden as idle.\n- **Scan warnings:** Avoid showing antenna-adjustment warnings while a scan is testing frequencies without a selected channel.\n\n## ⚙️ Improvements\n\n- **Missing measurements:** Clearly distinguish idle tuners from scans where the device is not supplying reception measurements. Older devices without scan-status support continue to show their available tuner readings.",
+        "targetAbi": "12.2.0.0",
+        "sourceUrl": "https://github.com/aober420/HDHomeRun-Signal-Monitor/releases/download/v1.0.1/HDHomeRunSignalMonitor_1.0.1.0.zip",
+        "checksum": "cc2e453abc47e473ffab42ccf6b7f9db",
+        "timestamp": "2026-11-06T16:12:49.2666907+00:00"
+      },
+      {
         "version": "1.0.0.0",
         "changelog": "## ✨ New Features\n\n- **Plugin logo:** A new antenna and signal logo identifies HDHomeRun Signal Monitor on GitHub and in Jellyfin's plugin catalog.\n\n## ⚙️ Improvements\n\n- **Stable release:** Version 1.0.0 brings live reception readings, rolling graphs, and the antenna sidebar shortcut out of beta for Jellyfin 12.2.",
         "targetAbi": "12.2.0.0",

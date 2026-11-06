@@ -4,7 +4,7 @@
 </style>
 <div data-role="content"><div class="content-primary">
 <h2>HDHomeRun Signal Monitor</h2>
-<section aria-labelledby="signalHeading"><h2 id="signalHeading">Live tuner signal</h2><p>Readings refresh every second while this page is open. Play a channel in Jellyfin to see its reception. Aim for a steady 100% symbol quality when adjusting your antenna.</p><p id="signalStatus" role="status">Connecting to tuners…</p><div id="signalDevices"></div></section>
+<section aria-labelledby="signalHeading"><h2 id="signalHeading">Live tuner signal</h2><p>Readings refresh every second while this page is open. Play a channel or run an HDHomeRun channel scan to see the reception readings supplied by your tuner. Aim for a steady 100% symbol quality when adjusting your antenna.</p><p id="signalStatus" role="status">Connecting to tuners…</p><div id="signalDevices"></div></section>
 <form id="freeGuideForm"><h2>Tuner settings</h2><p>Uses your configured HDHomeRun tuners. Optionally enter additional tuner addresses below.</p><div class="inputContainer"><label class="inputLabel" for="tunerUrls">Additional tuner URLs (comma separated)</label><input is="emby-input" id="tunerUrls" type="text" /></div><button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button></form>
 </div></div>
 <script type="text/javascript">
@@ -25,16 +25,17 @@ function render(data){
  if(!data.Devices.length){root.appendChild(element('p','No HDHomeRun tuners configured. Add one under Dashboard → Live TV, or enter its address below.'));history.clear();return;}
  data.Devices.forEach(function(device){
   root.appendChild(element('h3',device.Address));
+  if(device.Scan && device.Scan.InProgress){var message='Channel scan in progress';if(device.Scan.Progress!==null)message+=' · '+device.Scan.Progress+'%';if(device.Scan.Found!==null)message+=' · '+device.Scan.Found+' channels found';root.appendChild(element('p',message));}
   if(device.Error){root.appendChild(element('p',device.Error,'signal-warning'));return;}
   var grid=element('div',undefined,'signal-grid');root.appendChild(grid);
   if(!device.Tuners.length)grid.appendChild(element('p','No tuner status readings returned.'));
   device.Tuners.forEach(function(t){
-   var key=device.Address+'/'+t.Resource,card=element('article',undefined,'signal-card'),active=!!t.Channel;grid.appendChild(card);card.appendChild(element('h3',t.Resource));
-   card.appendChild(element('p',active?t.Channel+' '+(t.Name||''):'Idle — play a channel to see reception.','signal-muted'));
+   var key=device.Address+'/'+t.Resource,card=element('article',undefined,'signal-card'),active=!!t.Channel || !!t.Frequency || [t.Strength,t.Quality,t.Symbol].some(function(v){return v!==null && v!==undefined;});grid.appendChild(card);card.appendChild(element('h3',t.Resource));
+   card.appendChild(element('p',t.Channel?t.Channel+' '+(t.Name||''):t.Frequency?'Tuned to '+(t.Frequency/1000000).toFixed(1)+' MHz':active?'Reception readings (channel not reported)':device.Scan && device.Scan.InProgress?'Scan in progress — this tuner is not reporting reception measurements.':'Idle — play a channel to see reception.','signal-muted'));
    if(!active){history.delete(key);return;}seen.add(key);
-   var samples=history.get(key)||[];if(samples.length&&samples[samples.length-1].Channel!==t.Channel)samples=[];samples.push(t);if(samples.length>60)samples.shift();history.set(key,samples);
+   var samples=history.get(key)||[];if(samples.length&&(samples[samples.length-1].Channel!==t.Channel || samples[samples.length-1].Frequency!==t.Frequency))samples=[];samples.push(t);if(samples.length>60)samples.shift();history.set(key,samples);
    [['Signal strength','Strength'],['Signal quality','Quality'],['Symbol quality','Symbol']].forEach(function(pair){var row=element('div',undefined,'signal-row');row.appendChild(element('span',pair[0]));row.appendChild(element('strong',field(t[pair[1]])));card.appendChild(row);var bar=element('progress');bar.max=100;bar.value=Math.max(0,Math.min(100,t[pair[1]]||0));bar.setAttribute('aria-label',pair[0]+': '+field(t[pair[1]]));card.appendChild(bar);});
-   if(t.Symbol!==null&&t.Symbol<100)card.appendChild(element('p','Reception errors detected. Adjust antenna position and check cable connections.','signal-warning'));
+   if(t.Channel&&t.Symbol!==null&&t.Symbol<100)card.appendChild(element('p','Reception errors detected. Adjust antenna position and check cable connections.','signal-warning'));
    if(t.NetworkRate!==null)card.appendChild(element('p','Stream: '+(t.NetworkRate/1000000).toFixed(2)+' Mbps','signal-muted'));
    card.appendChild(graph(samples));var legend=element('div',undefined,'signal-legend');[['Strength','#54c8ff'],['Quality','#d59cff'],['Symbol','#75dc9a']].forEach(function(p){var label=element('span',p[0]);label.style.color=p[1];legend.appendChild(label);});card.appendChild(legend);
   });
@@ -47,4 +48,3 @@ page.addEventListener('pagehide',function(){stop();history.clear();});
 page.querySelector('#freeGuideForm').addEventListener('submit',function(e){e.preventDefault();Dashboard.showLoadingMsg();ApiClient.getPluginConfiguration(pluginId).then(function(c){c.TunerUrls=page.querySelector('#tunerUrls').value;return ApiClient.updatePluginConfiguration(pluginId,c);}).then(function(result){Dashboard.processPluginConfigurationUpdateResult(result);history.clear();start();}).catch(function(){Dashboard.hideLoadingMsg();Dashboard.alert('Could not save settings.');});});
 })();
 </script></div>
-

@@ -41,17 +41,36 @@ public sealed class SignalController(IConfigurationManager configuration) : Cont
             if (document.RootElement.ValueKind != JsonValueKind.Array) throw new JsonException();
             var tuners = document.RootElement.EnumerateArray().Select(t => t.ValueKind != JsonValueKind.Object ? throw new JsonException() : new TunerReading(
                 Text(t, "Resource") ?? "Tuner", Text(t, "VctNumber"), Text(t, "VctName"),
-                Number(t, "SignalStrengthPercent"), Number(t, "SignalQualityPercent"), Number(t, "SymbolQualityPercent"), Number(t, "NetworkRate"))).ToArray();
-            return new(label, tuners, null);
+                Number(t, "SignalStrengthPercent"), Number(t, "SignalQualityPercent"), Number(t, "SymbolQualityPercent"), Number(t, "NetworkRate"), Number(t, "Frequency"))).ToArray();
+            var scan = await ReadScanAsync(uri, client, cancellationToken);
+            return new(label, tuners, null, scan);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { return new(label, [], "Tuner did not respond within three seconds."); }
         catch (HttpRequestException) { return new(label, [], "Cannot reach tuner. Check its address, power, and network connection."); }
         catch (JsonException) { return new(label, [], "Tuner returned an unreadable status response."); }
     }
 
+    private static async Task<ScanReading?> ReadScanAsync(Uri uri, HttpClient client, CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(1));
+        try
+        {
+            using var response = await client.GetAsync(new Uri(uri, "lineup_status.json"), timeout.Token);
+            response.EnsureSuccessStatusCode();
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(timeout.Token));
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("ScanInProgress", out var flag)) return null;
+            var inProgress = flag.ValueKind == JsonValueKind.True || (flag.ValueKind == JsonValueKind.Number && flag.TryGetInt64(out var n) && n != 0);
+            return new(inProgress, Number(root, "Progress"), Number(root, "Found"));
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { return null; }
+        catch (HttpRequestException) { return null; }
+        catch (JsonException) { return null; }
+    }
     private static string? Text(JsonElement item, string key) => item.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     private static long? Number(JsonElement item, string key) => item.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number) ? number : null;
 }
-public sealed record DeviceReading(string Address, TunerReading[] Tuners, string? Error);
-public sealed record TunerReading(string Resource, string? Channel, string? Name, long? Strength, long? Quality, long? Symbol, long? NetworkRate);
-
+public sealed record DeviceReading(string Address, TunerReading[] Tuners, string? Error, ScanReading? Scan = null);
+public sealed record TunerReading(string Resource, string? Channel, string? Name, long? Strength, long? Quality, long? Symbol, long? NetworkRate, long? Frequency = null);
+public sealed record ScanReading(bool InProgress, long? Progress, long? Found);

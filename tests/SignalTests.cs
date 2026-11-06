@@ -37,10 +37,22 @@ public class SignalTests
         var authorization=Assert.Single(typeof(SignalController).GetCustomAttributes(typeof(AuthorizeAttribute),true).Cast<AuthorizeAttribute>());
         Assert.Equal("RequiresElevation",authorization.Policy);
     }
-    private sealed class Handler(string json):HttpMessageHandler
+    [Fact] public async Task ScanMeasurementsWithoutChannelArePreserved()
+    {
+        using var client=new HttpClient(new Handler("""[{"Resource":"tuner0","Frequency":533000000,"SignalStrengthPercent":0,"SignalQualityPercent":0,"SymbolQualityPercent":0}]""", """{"ScanInProgress":1,"Progress":42,"Found":12}"""));
+        var result=await SignalController.ReadTunerAsync("tuner.test",client,default);
+        Assert.Null(result.Error);Assert.True(result.Scan!.InProgress);Assert.Equal(42L,result.Scan.Progress);Assert.Equal(12L,result.Scan.Found);
+        var tuner=Assert.Single(result.Tuners);Assert.Null(tuner.Channel);Assert.Equal(533000000L,tuner.Frequency);Assert.Equal(0L,tuner.Strength);
+    }
+    [Theory][InlineData("not json")][InlineData("{}")]
+    public async Task UnavailableScanMetadataDoesNotHideTunerReadings(string scan)
+    {
+        using var client=new HttpClient(new Handler("""[{"Resource":"tuner0","VctNumber":"32.1","SignalStrengthPercent":80}]""",scan));
+        var result=await SignalController.ReadTunerAsync("tuner.test",client,default);
+        Assert.Null(result.Error);Assert.Null(result.Scan);Assert.Equal(80L,Assert.Single(result.Tuners).Strength);
+    }    private sealed class Handler(string json, string scan = null):HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token)
-        {token.ThrowIfCancellationRequested();Assert.Equal("/status.json",request.RequestUri!.AbsolutePath);return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(json,Encoding.UTF8,"application/json")});}
+        {token.ThrowIfCancellationRequested();var status=request.RequestUri!.AbsolutePath=="/status.json";return Task.FromResult(new HttpResponseMessage(status || scan is not null ? HttpStatusCode.OK : HttpStatusCode.NotFound){Content=new StringContent(status ? json : scan ?? "",Encoding.UTF8,"application/json")});}
     }
 }
-
