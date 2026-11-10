@@ -2,7 +2,7 @@
 
 # HDHomeRun Signal Monitor
 
-Live antenna reception readings inside Jellyfin 12.2. Watch each tuner's channel, signal strength, signal quality, and symbol quality update automatically, with a rolling graph to help adjust your antenna.
+Live antenna reception readings inside Jellyfin 12.x (12.2 or later). Watch each tuner's channel, signal strength, signal quality, and symbol quality update automatically, with a rolling graph to help adjust your antenna.
 
 ## Installation
 
@@ -16,7 +16,7 @@ Install **HDHomeRun Signal Monitor** and restart Jellyfin. Open **HDHomeRun Sign
 
 The monitor uses HDHomeRun tuners already configured under Live TV. Additional addresses can be entered on its settings page. It reads status only and does not change channels. No account or subscription is required.
 
-**1.0.1** · Requires Jellyfin 12.2. Monitoring pauses when the browser tab is hidden and stops when you leave the page.
+**1.0.1** · Supports Jellyfin 12.2 and later compatible releases in the 12.x series. Monitoring pauses when the browser tab is hidden and stops when you leave the page.
 
 ## License
 

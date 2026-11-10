@@ -3,7 +3,7 @@
     "guid": "a75283c1-427c-4d56-9f52-e4f9725b709a",
     "name": "HDHomeRun Signal Monitor",
     "description": "Live HDHomeRun reception readings and graphs for antenna adjustment.",
-    "overview": "Automatically updating tuner status, signal strength, quality, and symbol quality for Jellyfin 12.2.",
+    "overview": "Automatically updating tuner status, signal strength, quality, and symbol quality for Jellyfin 12.x (12.2 or later).",
     "owner": "aober420",
     "category": "Live TV",
     "versions": [
